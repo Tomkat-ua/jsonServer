@@ -1,14 +1,13 @@
 
 #-----------------------------------------------------------------------------------------
-from flask import Flask, jsonify, request
-import datetime
-import logging
-import sys
-from flask.logging import default_handler
-import os
+import datetime, logging, sys,os,csv,fbextract,json
 from dotenv import load_dotenv
 from gevent.pywsgi import WSGIServer
-import fbextract
+from io import StringIO
+from flask import Flask, jsonify#,render_template
+import mgrs
+# from json import load as jsonLoad
+# from json import dumps as jsonDumps
 
 
 def removeLog():
@@ -31,42 +30,90 @@ app = Flask(__name__)
 
 print(f"Running JSON-SERVER on port {os.getenv('PORT')}")
 
-# try:
-#     # with open('db.json', 'r',encoding='utf-8') as f: data = json.load(f)
-#     # data = fbextract.get_data()
-#     # for key in data:
-#     #     print(key)
-#     #     print(f"\n\033[1m\033[4m{key.upper()}\033[00m")
-#     #     # GET with blue
-#     #     print(f"{printColor('GET', '34')} http://192.168.10.9:{os.getenv('PORT')}/{key}")
-#     #     # POST with green
-#     #     print(f"{printColor('GET', '34')} /{key}/<id>")
-#     #     print(f"{printColor('POST', '32')} /{key}")
-#     #     # PUT with yellow
-#     #     print(f"{printColor('PUT', '33')} /{key}")
-#     #     # print delete with red
-#     #     print(f"{printColor('DELETE', '31')} /{key}")
+
+with open("qrys.json", "r") as f:
+    q = json.load(f)
+# q = {
+#     "losses":"select  * from v_loses",
+#     "analitic":"select  * from V_SKLAD_ANALITIC_2",
+#     "loss-cost":"losses.up_losses_cost",
+#     "arrived": "select * from VIEW_PRIHOD"
+# }
+
+
+
+def curTojson(cur):
+    columns = [column[0] for column in cur.description]
+    return  [dict(zip(columns, row)) for row in cur.fetchall()]
+
+def curTocsv(cur):
+    column_names = [i[0] for i in cur.description]
+    f = StringIO()
+    w = csv.writer(f,delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    w.writerow(column_names)
+    for row in cur:
+        w.writerow(row)
+    #w.writerows(cur)
+
+    result = f.getvalue()
+    return result
+
+
+
+# @app.route('/<res>', methods=['GET'])
+# def get_from_proc(res):
+#     # return q["test"]
+#     # param = []
+#     # print(fbextract.get_data(q[res]))
+#     data = curTojson(fbextract.get_data(q[res]))
+#     # data = curTojson(fbextract.exec_proc(q["test"],param))
 #
-# except FileNotFoundError:
-#     print("json data not found")
-#     exit()
+#     return jsonify({now.strftime("%Y-%m-%d %H:%M:%S"): data})
+
+#@app.route('/<resource>/<out>', methods=['GET'])
+# def get_resource(resource,out):
+#         try:
+#             if out == 'json':
+#                 data = curTojson(fbextract.get_data(q[resource]))
+#                 return   jsonify({now.strftime("%Y-%m-%d %H:%M:%S") : data})
+#             if out == 'csv':
+#                 return curTocsv(fbextract.get_data(q[resource] ))
+#         except Exception as e:
+#             # return  '<html> <h4> ERROR</h4> </br> <body>'  +str(e) + '</body></html>'
+#             return jsonify({'error': str(e)})
 
 
-@app.route('/<resource>', methods=['GET'])
-def get_resource(resource):
-        data = fbextract.get_data()
-        now = datetime.datetime.now()
-        # print(now.strftime("%Y-%m-%d %H:%M:%S"))
-        # return data
-        return jsonify({now.strftime("%Y-%m-%d %H:%M:%S") : data})
 
+@app.route('/<resource>/<out>', methods=['GET'])
+def get_resource(resource,out):
+        try:
+            sql = q[resource]
+            # sql =  'select * from monitoring.GET_DETDOC_SERIALS(:doc_id,:tov_id,0,:doc_type_id)'
+            # sql = sql.replace(':doc_id','300000355')
+            # sql = sql.replace(':tov_id','300000014')
+            # sql = sql.replace(':doc_type_id','10')
+            print(sql)
+            if out == 'json':
+                data = curTojson(fbextract.get_data(sql))
+                for row in data:
+                    r = row['ACTION_COORD']
+                    if len(r)>0:
+                        m = mgrs.MGRS()
+                        print(r)
+                        d = m.toLatLon(r)
+                        row['la'] = d[0]
+                        row['lo'] = d[1]
+                    else:
+                        row['la'] = ''
+                        row['lo'] = ''
+                    print(row)
+                now  = datetime.datetime.now()
+                return   jsonify({now.strftime("%Y-%m-%d %H:%M:%S") : data})
+            if out == 'csv':
+                return curTocsv(fbextract.get_data(sql))
+        except Exception as e:
+            return jsonify({'error': str(e),'sql':sql})
 
-# @app.route('/<resource>', methods=['GET'])
-# def get_resource(resource):
-#     if resource in data:
-#         return jsonify(data[resource])
-#     else:
-#         return jsonify({"error": "Resource not found"}), 404
 
 # @app.route('/<resource>/<id>', methods=['GET'])
 # def get_resource_by_id_with_children(resource, id):

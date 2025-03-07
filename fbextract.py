@@ -1,26 +1,11 @@
 
-import os,fdb#,json
-
-
-
-# fb_monitoring = Gauge('fb_monitoring','FB Monitoring Data',['host','db','key'])
-# info= Info('app','Application about',['name','version'])
-# info.labels(app_name,app_ver)
-
-sql = ('select  a.* '
-       ' from monitoring.get_loses_analitic a ')
-
-delay_sec        = os.getenv("DELAY_LOOP", 10)
+import os,fdb
 db_server        = os.getenv("DB_HOST", '192.168.10.5')
-db_path          = os.getenv("DB_PATH", 'sklad_dev')
-db_user          = os.getenv("DB_USER", 'sysdba')
-db_password      = os.getenv("DB_PASSWORD", 'masterkey')
-#export_file      = os.getenv("EXPORT_FILE", '//192.168.10.5/data/АППО/ОБЛІК АППО/sklad_data.csv')
-#export_file      ='c:/sklad/sklad_data.csv'
+db_path          = os.getenv("DB_PATH", 'sklad_prod')
+db_user          = os.getenv("DB_USER", 'MONITOR')
+db_password      = os.getenv("DB_PASSWORD", 'inwino')
 
-def get_data():
-    #driver_config.server_defaults.host.value = db_server
-   # con = connect(db_path, user=db_user, password=db_password)
+def create_connect():
     con = fdb.connect(
         host=db_server,
         port=3053,
@@ -30,31 +15,30 @@ def get_data():
         charset="utf-8",
         fb_library_name="C:/sklad/x64/fbclient.dll"
     )
+    return con
 
+def close_connect(con):
+    con.close()
+
+def exec_proc(sql,params):
+    con = create_connect()
     cur = con.cursor()
-    cur.execute(sql)
-    # rows = cur.fetchall()
-
-    columns = [column[0] for column in cur.description]
-    data = [dict(zip(columns, row)) for row in cur.fetchall()]
-    # print(data)
-    # json_data=json.dumps({'losses':data})
-    #json_data = json.dumps({'losses':data})#, indent=4)
-    #print(json_data)
+    cur.callproc(sql, params)
+    # data  = cur.fetchone()
+    data = cur.fetchall()
+    close_connect(con)
+    cur.close()
     return data
-# #------------------------
-#     # Fetch all rows and convert to a list of dictionaries
-#     rows = cur.fetchall()
-#     result = []
-#     for row in rows:
-#         d = {}
-#         #print(d)
-#         for i, col in enumerate(cur.description):
-#             d[col[0]] = row[i]
-#             result.append(d)
-#     # Convert the list of dictionaries to JSON and print it
-#     json_result = json.dumps({'losses': result})
-#     return json_result
-# #------------------
 
-# get_data()
+def get_data(sql):
+    #sql = 'select * from ' + sql
+    con = create_connect()
+    cur = con.cursor()
+    data = cur.execute(sql)
+    # columns = [column[0] for column in cur.description]
+    # data = [dict(zip(columns, row)) for row in cur.fetchall()]
+    # close_connect(con)
+    return data
+    cur.close()
+    close_connect(con)
+
