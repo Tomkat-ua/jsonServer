@@ -81,6 +81,16 @@ def items_serial(serial,p):
     except Exception as e:
         return jsonify({'error': str(e), 'sql': sql})
 ##############################
+@app.route('/test', methods=['GET'])
+def test():
+    # import hashlib
+    # hash_object = hashlib.md5(b'Hello World')
+    # print(hash_object.hexdigest())
+    # return hash_object.hexdigest()
+    with open("qrys.json", "r") as f:
+        j = json.load(f)
+    return j
+#############################
 if __name__ == "__main__":
     http_server = WSGIServer(('', int(os.getenv('PORT'))), app)
     http_server.serve_forever()
