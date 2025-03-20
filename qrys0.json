@@ -1,0 +1,12 @@
+{
+    "losses":"select  * from v_loses",
+    "analitic":"select  * from V_SKLAD_ANALITIC_2",
+    "loss-cost":"losses.up_losses_cost",
+    "arrived": "select * from VIEW_PRIHOD",
+    "date":" select current_timestamp from rdb$database;",
+    "get_losses" : "select * from monitoring.GET_LOSSES ",
+    "get_storage": "select * from monitoring.get_in_storage",
+    "get_arrived": "select * from monitoring.get_arrived",
+    "get_map": "select * from monitoring.get_losses_map",
+    "get_transfered": "select * from monitoring.get_transfered"
+}
