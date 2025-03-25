@@ -1,96 +1,70 @@
 
-#-----------------------------------------------------------------------------------------
-import datetime, logging, sys,os,csv,fbextract
+#-- IMPORT -------------------------------------------------------------------------------
+import fbextract,os,datetime
 from dotenv import load_dotenv
 from gevent.pywsgi import WSGIServer
-from io import StringIO
-from flask import Flask, jsonify
-from json import load as jsonLoad
+from flask import Flask, jsonify,render_template
+
 #-----------------------------------------------------------------------------------------
-
-def removeLog():
-    logging.getLogger('werkzeug').setLevel(logging.ERROR)
-    sys.modules['flask.cli'].show_server_banner = lambda *x: None
-
-def findIndexById(resourceList, id):
-    for index, item in enumerate(resourceList):
-        if item.get("id") == id:
-            return index
-    return None
-
-def printColor(message, color):
-    return (f"\033[{color}m{message}\033[00m")
-
-
-def curTojson(cur):
-    columns = [column[0] for column in cur.description]
-    return  [dict(zip(columns, row)) for row in cur.fetchall()]
-
-with open("qrys.json", "r") as f:
-    q = jsonLoad(f)
-
-#now = datetime.datetime.now()
 load_dotenv()
 
 app = Flask(__name__)
 
-
 print(f"Running JSON-SERVER on port {os.getenv('PORT')}")
-
 ##--------------------------------------------------------------##
-################################
-@app.route('/<resource>/<out>', methods=['GET'])
-def get_resource(resource,out):
+def curTojson(cur,apiver=None):
+    columns = [column[0] for column in cur.description]
+    if apiver == 0:
+        now = datetime.datetime.now()
+        now = now.strftime("%Y-%m-%d %H:%M:%S")
+        result = jsonify({ now:[dict(zip(columns, row)) for row in cur.fetchall()]})
+    else:
+        result = jsonify([dict(zip(columns, row)) for row in cur.fetchall()])
+    return  result
+
+########## NON API ##############
+@app.route('/<endpoint>/json', methods=['GET'])
+def get_nonapi_data(endpoint):
         try:
-            sql = q[resource]
-            if out == 'json':
-                data = curTojson(fbextract.get_data(sql))
-                now = datetime.datetime.now()
-                return   jsonify({now.strftime("%Y-%m-%d %H:%M:%S") : data})
-            if out == 'csv':
-                return curTocsv(fbextract.get_data(sql))
+            sql = fbextract.get_sql(endpoint, None,1)
+            data = curTojson(fbextract.get_data(sql),0)
+            return data
         except Exception as e:
             return jsonify({'error': str(e),'sql':sql})
-################################
-@app.route('/get_lost/<serial>', methods=['GET'])
-def docs_serial(serial):
-    try:
-        sql = q['get_lost'] % serial
-        data = curTojson(fbextract.get_data(sql))
-        return data
-    except Exception as e:
-        return jsonify({'error': str(e), 'sql': sql})
-###############################
-@app.route('/get_lost_items/<serial>/<p>', methods=['GET'])
-def items_serial(serial,p):
-    try:
-        sql = str(q['get_lost_items']) #% serial
-        sql = sql.replace('%s',serial)
-        where =''
-        if p == '-1':
-            where = ' where t.item_count_loss >0 '
-        if p == "1":
-            where = ' where t.item_count_rem > 0 '
-        if p == "0":
-            where =''
 
-        sql = sql + where
+################################
+@app.route('/api/1/<endpoint>',defaults={'p': None}, methods=['GET'])
+@app.route('/api/1/<endpoint>/<p>', methods=['GET'])
+def gen_data_1(endpoint,p):
+    try:
+        if p:
+            sql = fbextract.get_sql(endpoint,p,1)
+        else :
+            sql = fbextract.get_sql(endpoint, None,1)
         print(sql)
-        data = curTojson(fbextract.get_data(sql))
-        return data
+        result = curTojson(fbextract.get_data(sql))
+        #result.headers["Content-Type"] = "application/json; charset=utf-8"
+        return result,200
     except Exception as e:
-        return jsonify({'error': str(e), 'sql': sql})
-##############################
-@app.route('/test', methods=['GET'])
-def test():
-    # import hashlib
-    # hash_object = hashlib.md5(b'Hello World')
-    # print(hash_object.hexdigest())
-    # return hash_object.hexdigest()
-    with open("qrys.json", "r") as f:
-        j = json.load(f)
-    return j
-#############################
+        return jsonify({'error': str(e), 'sql': sql}),200
+################################
+@app.route('/api/2/<endpoint>', defaults={'p': None}, methods=['GET'])
+@app.route('/api/2/<endpoint>/<p>', methods=['GET'])
+def gen_data_2(endpoint, p):
+    try:
+        if p:
+            sql = fbextract.get_sql(endpoint, p,2)
+        else:
+            sql = fbextract.get_sql(endpoint, None,2)
+        print(sql)
+        result = curTojson(fbextract.get_data(sql))
+        #result.headers["Content-Type"] = "application/json; charset=utf-8"
+        return result, 200
+    except Exception as e:
+        return jsonify({'error': str(e), 'sql': sql}), 200
+################################
+
+
 if __name__ == "__main__":
     http_server = WSGIServer(('', int(os.getenv('PORT'))), app)
     http_server.serve_forever()

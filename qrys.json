@@ -5,6 +5,6 @@
     "get_map": "select * from monitoring.get_losses_map",
     "get_transfered": "select * from monitoring.get_transfered",
     "get_lost": "select * from monitoring.get_losses l where l.serial = '%s'",
-    "get_lost_items0": "select * from losses.get_lost_items('%s','%p')",
-    "get_lost_items" : "select * from kits_tools.kit_items_by_serial('%s',1) t "
+    "get_lost_items": "select * from losses.get_lost_items('%s','%p')",
+    "get_lost_items1" : "select * from kits_tools.kit_items_by_serial('%s',1) t "
 }

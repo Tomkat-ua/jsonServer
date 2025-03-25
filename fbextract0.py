@@ -7,21 +7,6 @@ db_user          = os.getenv("DB_USER", 'sysdba')
 db_password      = os.getenv("DB_PASSWORD", 'masterkey')
 
 
-def get_sql(endpoint,p,apiver):
-    sql = 'select * from querys where ENDPOINT = \'%s\';' % endpoint
-    data = get_data(sql)
-    if apiver == 1:
-        for row in data:
-            result = row[2]
-            if p:
-                result = result + ' where ' + p
-            return result
-    if apiver == 2:
-        for row in data:
-            result = row[2]
-            if p:
-                result = result % p
-            return result
 
 def create_connect():
     con = fdb.connect(
@@ -38,6 +23,14 @@ def close_connect(con):
     con.close()
 
 def get_data(sql):
+#    con = fdb.connect(
+#        host=db_server,
+#        port=3053,
+#        database=db_path,
+#        user=db_user,
+#        password=db_password,
+#        charset="utf-8"
+#    )
     con = create_connect()
     cur = con.cursor()
     data = cur.execute(sql)
