@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+    <body>
+            <a href="/form">До форми вводу</a>
+            <h4>Залишки серійних номерів на складі товару</h4><br>
+            <h4>{{ tov_name }} ({{ id }}) - {{ rc }} шт.</h4>
+            {% for row in serials %}
+                <td>{{ row['SERIAL'] }}</td><br>
+            {% endfor %}
+    </body>
+</html>
