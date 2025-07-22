@@ -17,8 +17,10 @@ from datetime import datetime
 load_dotenv()
 
 app = Flask(__name__)
+
 local_ip = '192.168.10.9'
-print(f"Running JSON-SERVER on port {os.getenv('PORT')}" + " - http://" + local_ip + ':'+os.getenv('PORT'))
+
+# print(f"Running JSON-SERVER on port {os.getenv('PORT')}" + " - http://" + local_ip + ':'+os.getenv('PORT'))
 
 API_KEY = os.getenv("API_KEY","AIzaSyDtzSvLJesvqAUbySNq20egFBiKtZCKMEM")
 # ALLOWED_IPS = {"192.168.10.*", "127.0.0.1"}
@@ -174,9 +176,9 @@ def get_date():
     print(result)
     return str(result)
 ########### END DEV ##############################
-if __name__ == "__main__":
-    http_server = WSGIServer((local_ip, int(os.getenv('PORT'))), app)
-    http_server.serve_forever()
+# if __name__ == "__main__":
+#     http_server = WSGIServer((local_ip, int(os.getenv('PORT'))), app)
+#     http_server.serve_forever()
 
 
 if __name__ == "__main__":
