@@ -11,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 local_ip = '192.168.10.9'
 
-API_KEY = os.getenv("API_KEY","AIzaSyDtzSvLJesvqAUbySNq20egFBiKtZCKMEM")
+API_KEY = os.getenv("API_KEY","333")
 # ALLOWED_IPS = {"192.168.10.*", "127.0.0.1"}
 check_ext_ip = os.getenv("CHECK_EXT_IP",'192.168.10.9')
 
@@ -31,6 +31,7 @@ def curTojson(cur,apiver=None):
 
 @app.before_request
 def check_ip_and_api_key():
+    print("Запит на:", request.path)
     client_ip = request.remote_addr
     # if client_ip not in ALLOWED_IPS:
     if client_ip == check_ext_ip:
