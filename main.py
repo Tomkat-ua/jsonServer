@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------------------
-import fbextract,os
+import fbextract,os,platform
 from dotenv import load_dotenv
 from gevent.pywsgi import WSGIServer
 from flask import Flask, jsonify,  abort, request
@@ -176,4 +176,14 @@ def get_date():
 ########### END DEV ##############################
 if __name__ == "__main__":
     http_server = WSGIServer((local_ip, int(os.getenv('PORT'))), app)
+    http_server.serve_forever()
+
+
+if __name__ == "__main__":
+    if platform.system() == 'Windows':
+        http_server = WSGIServer((local_ip, int(os.getenv('PORT'))), app)
+        print(f"Running HTTP-SERVER on port - http://" + local_ip + ':' + os.getenv('PORT'))
+    else:
+        http_server = WSGIServer(('', int(os.getenv('PORT'))), app)
+        print(f"Running HTTP-SERVER on port :" + os.getenv('PORT'))
     http_server.serve_forever()
