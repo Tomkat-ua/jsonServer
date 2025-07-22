@@ -7,7 +7,6 @@ WORKDIR /app
 COPY requirements.txt /app/
 COPY main.py /app/jsonserver.py
 COPY fbextract.py /app/fbextract.py
-COPY qrys.json /app/
 
 RUN apt-get update  
 RUN apt-get install  libfbclient2 -y --no-install-recommends
