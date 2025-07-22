@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Запити</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: #e6f7e6;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #2d6a4f;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        li {
+            background: #b7e4c7;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .query-name {
+            font-weight: bold;
+            color: #1b4332;
+        }
+        .query-text {
+            font-family: monospace;
+            color: #081c15;
+        }
+        .upload-container {
+            margin-top: 20px;
+            padding: 10px;
+            background: #d8f3dc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .refresh-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #40916c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .refresh-button:hover {
+            background: #2d6a4f;
+        }
+    </style>
+    <script>
+        async function fetchQueries() {
+            try {
+                const response = await fetch('/api/queries');
+                const data = await response.json();
+                const list = document.getElementById('query-list');
+                list.innerHTML = '';
+                data.forEach(query => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="query-name">${query.name}:</span> <span class="query-text">${query.sql}</span>`;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Помилка завантаження даних:', error);
+            }
+        }
+        
+        async function uploadFile(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('jsonFile');
+            const file = fileInput.files[0];
+            if (!file) return alert('Виберіть файл!');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    alert('Файл успішно завантажено!');
+                    fetchQueries();
+                } else {
+                    alert('Помилка завантаження файлу');
+                }
+            } catch (error) {
+                console.error('Помилка при відправці:', error);
+            }
+        }
+        
+        async function uploadFromURL(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('jsonUrl').value.trim();
+            if (!urlInput) return alert('Введіть URL!');
+            
+            try {
+                const response = await fetch('/api/upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput })
+                });
+                if (response.ok) {
+                    alert('Файл успішно завантажено з URL!');
+                    fetchQueries();
+                } else {
+                    alert('Помилка завантаження файлу з URL');
+                }
+            } catch (error) {
+                console.error('Помилка при відправці URL:', error);
+            }
+        }
+        
+        window.onload = fetchQueries;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Список SQL-запитів</h2>
+        <button class="refresh-button" onclick="fetchQueries()">Оновити список</button>
+        <ul id="query-list">
+            <li>Завантаження даних...</li>
+        </ul>
+        
+        <div class="upload-container">
+            <h3>Завантажити JSON-файл</h3>
+            <form onsubmit="uploadFile(event)">
+                <input type="file" id="jsonFile" accept="application/json">
+                <button type="submit">Завантажити</button>
+            </form>
+        </div>
+        
+        <div class="upload-container">
+            <h3>Завантажити JSON за URL</h3>
+            <form onsubmit="uploadFromURL(event)">
+                <input type="text" id="jsonUrl" placeholder="Введіть URL">
+                <button type="submit">Завантажити</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+

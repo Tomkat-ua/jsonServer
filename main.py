@@ -1,8 +1,8 @@
 #-----------------------------------------------------------------------------------------
-import fbextract,os,json
+import fbextract,os
 from dotenv import load_dotenv
 from gevent.pywsgi import WSGIServer
-from flask import Flask, jsonify, render_template, request, url_for
+from flask import Flask, jsonify,  abort, request
 # import urllib.request
 from datetime import datetime
 # from flask_wtf import FlaskForm
@@ -12,12 +12,18 @@ from datetime import datetime
 # from owlready2 import *
 
 
+
+
 load_dotenv()
-# onto = get_ontology("bacteria.owl").load()
+
 app = Flask(__name__)
-# api = Api(app)
 local_ip = '192.168.10.9'
 print(f"Running JSON-SERVER on port {os.getenv('PORT')}" + " - http://" + local_ip + ':'+os.getenv('PORT'))
+
+API_KEY = os.getenv("API_KEY","AIzaSyDtzSvLJesvqAUbySNq20egFBiKtZCKMEM")
+# ALLOWED_IPS = {"192.168.10.*", "127.0.0.1"}
+check_ext_ip = '192.168.10.1'
+
 # print(f"Running JSON-SERVER {request.base_url}")
 def curTojson(cur,apiver=None):
     columns = [column[0] for column in cur.description]
@@ -33,9 +39,34 @@ def curTojson(cur,apiver=None):
        # result = jsonify([dict(zip(columns, row)) for row in cur.fetchall()])
     return  jsonify(result)
 
+
+@app.before_request
+def check_ip_and_api_key():
+    client_ip = request.remote_addr
+    # if client_ip not in ALLOWED_IPS:
+    if client_ip == check_ext_ip:
+        # abort(403, description="Forbidden: IP not allowed")
+        key = request.args.get("key")
+        if key != API_KEY:
+            abort(401, description="Unauthorized: Invalid API key")
+
+@app.route('/', methods=['GET'])
+def get_endpoints():
+    # key = request.args.get("key")  # або request.headers.get("X-API-KEY")
+    # if key != API_KEY:
+    #     abort(401, description="Невірний API ключ")
+
+    sql = ('select  q.num, q.endpoint,q.api_ver,q.description , \'' +str(request.base_url) +
+           ('\'||utils.get_url(q.endpoint) as url '
+            'from querys q'))
+    result = curTojson(fbextract.get_data(sql))
+    # print(f"The base URL is: {request.base_url}")
+    return result, 200
+
 ########## NON API ##############
 @app.route('/<endpoint>/json', methods=['GET'])
 def get_nonapi_data(endpoint):
+
         try:
             sql = fbextract.get_sql(endpoint, None,1)
             data = curTojson(fbextract.get_data(sql),0)
@@ -44,6 +75,9 @@ def get_nonapi_data(endpoint):
             return jsonify({'error': str(e),'sql':sql})
 
 #################################
+
+
+
 @app.route('/api/1/<endpoint>',defaults={'p': None}, methods=['GET'])
 # @app.route('/api/1/<endpoint>', methods=['GET'])
 def gen_data_1(endpoint,p):
@@ -104,6 +138,7 @@ def gen_data_3(endpoint):
 
 @app.route('/search')
 def search():
+
     try:
        params = dict(request.args)
        date1 = params.get('date1')
@@ -118,38 +153,7 @@ def search():
     except Exception as e:
         return jsonify({'error': str(e), 'sql': sql}), 200
 
-# @app.route('/<products>', methods=['GET'])
-# def get_products(products):
-#     category = request.args.get('category')
-#     brand = request.args.get('brand')
-#     sort = request.args.get('sort')
-#     print(category)
-#     return {
-#         "category": category,
-#         "brand": brand,
-#         "sort": sort
-#     }
 
-@app.route('/', methods=['GET'])
-def get_endpoints():
-    sql = ('select  q.num, q.endpoint,q.api_ver,q.description , \'' +str(request.base_url) +
-           ('\'||utils.get_url(q.endpoint) as url '
-            'from querys q'))
-    result = curTojson(fbextract.get_data(sql))
-    # print(f"The base URL is: {request.base_url}")
-    return result, 200
-
-
-
-# @app.route('/api/3/mqtt',  methods=['GET'])
-# # @app.route('/api/3/mqtt/<p>', methods=['GET'])
-# def gen_data_3():
-#     try:
-#         data = jsonify(mqttParser.get_messages())
-#         result = data
-#         return result, 200
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 200
 
 
 @app.route('/json', methods=['POST'])

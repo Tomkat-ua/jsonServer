@@ -1,0 +1,18 @@
+{
+  "losses": [
+    {"ID": 1, "T_NAME": "\u0411\u043f\u0410\u041a Matrice 30T", "ACTION_DATE": "2024-09-08", "TOVAR_KOL": 1},
+    {"ID": 2, "T_NAME": "\u0411\u043f\u0410\u041a Mavic 3", "ACTION_DATE": "2024-09-02", "TOVAR_KOL": 2}
+  ],
+  "posts": [
+    { "id": 1, "title": "rec1", "author": "typicode","count": 100 },
+    { "id": 2, "title": "rec2", "author": "comment1","count": 223 },
+    { "id": 3, "title": "rec3", "author": "comment2" ,"count": 45},
+    { "id": 4, "title": "rec46457474747", "author": "description","count": 22 }
+
+  ],
+  "comments": [
+    { "id": 1, "body": "some comment", "postId": 1 }
+  ],
+  "profile": { "name": "typicode" }
+}
+
