@@ -11,7 +11,7 @@ docker container rm $container
 docker run -dt \
     -p $eport:8000 \
     --name=$container \
-    -e VER=$tag \
+    -e APP_VERISON=$tag \
     -e TZ=Europe/Kyiv \
     -e DELAY_LOOP=30 \
     -e DB_HOST=192.168.10.5 \
