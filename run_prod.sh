@@ -1,6 +1,6 @@
 database=sklad_prod
 eport=8082
-tag=5
+tag=`cat version`
 
 container=jsonServer_$database
 img=tomkat/jsonserver:$tag
