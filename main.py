@@ -5,11 +5,11 @@ from gevent.pywsgi import WSGIServer
 from flask import Flask, jsonify,  abort, request
 from datetime import datetime
 
-
 load_dotenv()
-
 app = Flask(__name__)
+
 local_ip = '192.168.10.9'
+version = os.environ.get('APP_VERSION')
 
 API_KEY = os.getenv("API_KEY","333")
 check_ext_ip = os.getenv("CHECK_EXT_IP",'192.168.10.1')
@@ -104,8 +104,8 @@ def gen_data_3(endpoint):
 if __name__ == "__main__":
     if platform.system() == 'Windows':
         http_server = WSGIServer((local_ip, int(os.getenv('PORT'))), app)
-        print(f"Running HTTP-SERVER on port - http://" + local_ip + ':' + os.getenv('PORT'))
+        print(f"Running HTTP-SERVER ver. {version} on port - http://" + local_ip + ':' + os.getenv('PORT'))
     else:
         http_server = WSGIServer(('', int(os.getenv('PORT'))), app)
-        print(f"Running HTTP-SERVER on port :" + os.getenv('PORT'))
+        print(f"Running HTTP-SERVER ver. {version} on port :" + os.getenv('PORT'))
     http_server.serve_forever()
