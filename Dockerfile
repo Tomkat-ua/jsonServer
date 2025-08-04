@@ -9,5 +9,6 @@ WORKDIR /app
 
 COPY main.py /app/jsonserver.py
 COPY db.py /app/fbextract.py
+COPY templates /app/templates
 
 CMD [ "python3", "jsonserver.py" ]
