@@ -1,9 +1,10 @@
 
-import fbextract,os,platform
+import db,os,platform
 from dotenv import load_dotenv
 from gevent.pywsgi import WSGIServer
-from flask import Flask, jsonify,  abort, request
+from flask import Flask, jsonify,  abort, request,render_template,g
 from datetime import datetime
+from flask import send_from_directory
 
 load_dotenv()
 app = Flask(__name__)
@@ -14,8 +15,10 @@ version = os.environ.get('APP_VERSION')
 API_KEY = os.getenv("API_KEY","333")
 check_ext_ip = os.getenv("CHECK_EXT_IP",'192.168.10.1')
 
+port = os.getenv('PORT','3000')
 
-def curTojson(cur,apiver=None):
+
+def cur_to_json(cur,apiver=None):
     columns = [column[0] for column in cur.description]
     if apiver == 0:
         now = datetime.now()
@@ -27,6 +30,16 @@ def curTojson(cur,apiver=None):
             result.append(dict(zip(columns, row)))
     return  jsonify(result)
 
+def fetchall_as_dict(cursor):
+    columns = [desc[0] for desc in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),  'favicon.png',  mimetype='image/vnd.microsoft.icon'
+    )
 
 @app.before_request
 def check_ip_and_api_key():
@@ -36,16 +49,32 @@ def check_ip_and_api_key():
     print(f"Запит з {client_ip} на {request.path}")
     if client_ip == check_ext_ip:
         # abort(403, description="Forbidden: IP not allowed")
-        key = request.args.get("key")
-        if key != API_KEY:
+        # key = request.args.get("key")
+        g.user_key = request.args.get("key")
+        if g.user_key != API_KEY:
             abort(401, description="Unauthorized: Invalid API key")
+
+
+
+@app.route('/')
+def index():
+    try:
+        sql = ('select  q.num, q.endpoint,q.api_ver,q.description , \'' +str(request.base_url) +
+                   ('\'||utils.get_url(q.endpoint) as url '
+                    'from querys q'))
+        data = fetchall_as_dict( db.get_data(sql))
+    except Exception as e:
+        print("Помилка отримання API:", e)
+        data = []
+    return render_template('index.html', data=data)
+
 
 @app.route('/', methods=['GET'])
 def get_endpoints():
     sql = ('select  q.num, q.endpoint,q.api_ver,q.description , \'' +str(request.base_url) +
            ('\'||utils.get_url(q.endpoint) as url '
             'from querys q'))
-    result = curTojson(fbextract.get_data(sql))
+    result = cur_to_json(db.get_data(sql))
     return result, 200
 
 @app.route('/api/1/<endpoint>',defaults={'p': None}, methods=['GET'])
@@ -55,11 +84,11 @@ def gen_data_1(endpoint,p):
     print(p)
     try:
         if p:
-            sql = fbextract.get_sql(endpoint,p,1)
+            sql = db.get_sql(endpoint,p,1)
         else :
-            sql = fbextract.get_sql(endpoint, None,1)
+            sql = db.get_sql(endpoint, None,1)
         print(sql)
-        result = curTojson(fbextract.get_data(sql))
+        result = cur_to_json(db.get_data(sql))
         return result,200
     except Exception as e:
         return jsonify({'error': str(e), 'sql': sql}),200
@@ -70,31 +99,31 @@ def gen_data_1(endpoint,p):
 def gen_data_2(endpoint, p):
     try:
         if p:
-            sql = fbextract.get_sql(endpoint, p,2)
+            sql = db.get_sql(endpoint, p,2)
         else:
-            sql = fbextract.get_sql(endpoint, None,2)
+            sql = db.get_sql(endpoint, None,2)
         print(sql)
-        result = curTojson(fbextract.get_data(sql))
+        result = cur_to_json(db.get_data(sql))
         return result, 200
     except Exception as e:
         return jsonify({'error': str(e), 'sql': sql}), 200
 
 @app.route('/api/3/<endpoint>', methods=['GET'])
-def gen_data_3(endpoint):
+def gen_data_3(endpoint,p):
     try:
         params = dict(request.args)
         where = ''
         print(params)
-        sql = fbextract.get_sql(endpoint, None, 1)
+        sql = db.get_sql(endpoint, None, 1)
         for key,value in params.items():
             where = where + " and "+ key+'='+value
             where = where.replace('=like',' like')
         sql = sql + where
         print(sql)
-        con =  fbextract.create_connect()
+        con =  db.create_connect()
         cur = con.cursor()
         # cur.execute(sql,(date1,date2))
-        result = curTojson(cur.execute(sql))
+        result = cur_to_json(cur.execute(sql))
         cur.close()
         return   result
     except Exception as e:
@@ -103,9 +132,9 @@ def gen_data_3(endpoint):
 
 if __name__ == "__main__":
     if platform.system() == 'Windows':
-        http_server = WSGIServer((local_ip, int(os.getenv('PORT'))), app)
-        print(f"Running HTTP-SERVER ver. {version} on port - http://" + local_ip + ':' + os.getenv('PORT'))
+        http_server = WSGIServer((local_ip, int(port)), app)
+        print(f"Running HTTP-SERVER ver. {version} on port - http://" + local_ip + ':' + port)
     else:
-        http_server = WSGIServer(('', int(os.getenv('PORT'))), app)
-        print(f"Running HTTP-SERVER ver. {version} on port :" + os.getenv('PORT'))
+        http_server = WSGIServer(('', int(port)), app)
+        print(f"Running HTTP-SERVER ver. {version} on port :" + port)
     http_server.serve_forever()

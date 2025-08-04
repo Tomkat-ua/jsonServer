@@ -1,19 +1,13 @@
-FROM bitnami/python:3.9-debian-12
+FROM tomkat/python-base:latest
 
 ENV TZ=Europe/Kiev
 
-RUN apt-get update  
-RUN apt-get install  libfbclient2 -y --no-install-recommends
 COPY requirements.txt /app/
-RUN pip install -r requirements.txt
+RUN pip install  --no-cache-dir -r requirements.txt
 
 WORKDIR /app
-
 
 COPY main.py /app/jsonserver.py
 COPY fbextract.py /app/fbextract.py
 
-#ENTRYPOINT ["bash"]
 CMD [ "python3", "jsonserver.py" ]
-
-

@@ -1,41 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
-     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON Data</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>API Перегляд</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
-<body>
-    <h1>JSON Data</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Endpoint</th>
-                <th>SQL</th>
-            </tr>
+<body class="bg-light">
+<div class="container py-4">
+    <h2 class="mb-4">Список доступних API</h2>
+    <table class="table table-bordered table-hover bg-white shadow-sm">
+        <thead class="table-light">
+        <tr>
+            <th>#</th>
+            <th>Версія</th>
+            <th>Ендпоінт</th>
+            <th>Опис</th>
+            <th>Дії</th>
+        </tr>
         </thead>
         <tbody>
-            {% for row in data %}
-                <tr>
-                    <td>{{ row }}</td>
-                    <td>{{ data[row] }}</td>
-                </tr>
-            {% endfor %}
+        {% for row in data %}
+        <tr>
+            <td>{{ row.NUM }}</td>
+            <td>{{ row.API_VER }}</td>
+            <td>{{ row.ENDPOINT }}</td>
+            <td>{{ row.DESCRIPTION or "—" }}</td>
+            <td>
+                <button class="btn btn-sm btn-info me-1" onclick="showModal('{{ row.ENDPOINT }}', '{{ row.DESCRIPTION or '' }}')">
+                    Деталі
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="openApiUrl('{{ row.URL }}')">
+                    Відкрити API
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
         </tbody>
     </table>
+</div>
+
+<!-- Модальне вікно -->
+<div class="modal fade" id="apiModal" tabindex="-1" aria-labelledby="apiModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="apiModalLabel">Деталі API</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+      </div>
+      <div class="modal-body" id="apiModalBody">
+        ...
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showModal(endpoint, description) {
+    const modal = new bootstrap.Modal(document.getElementById('apiModal'));
+    document.getElementById('apiModalLabel').textContent = `Ендпоінт: ${endpoint}`;
+    document.getElementById('apiModalBody').textContent = description || 'Немає опису';
+    modal.show();
+}
+
+function openApiUrl(originalUrl) {
+    try {
+        const url = new URL(originalUrl);
+        const apiPath = url.pathname+'?key='+"{{ g.user_key }}"; // "/api/2/kit_items_by_serial"
+        const newUrl = window.location.origin + apiPath;
+        window.open(newUrl, '_blank');
+    } catch (e) {
+        alert("Помилка у URL: " + originalUrl);
+    }
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
