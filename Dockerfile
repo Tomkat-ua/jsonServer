@@ -8,6 +8,6 @@ RUN pip install  --no-cache-dir -r requirements.txt
 WORKDIR /app
 
 COPY main.py /app/jsonserver.py
-COPY fbextract.py /app/fbextract.py
+COPY db.py /app/fbextract.py
 
 CMD [ "python3", "jsonserver.py" ]
