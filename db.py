@@ -1,5 +1,6 @@
 
-import os,fdb
+import os,fdb,platform
+
 db_server        = os.getenv("DB_HOST", '192.168.10.5')
 db_path          = os.getenv("DB_PATH", 'sklad_prod')
 db_user          = os.getenv("DB_USER", 'MONITOR')
@@ -26,15 +27,25 @@ def get_sql(endpoint,p,apiver):
             return result
 
 def create_connect():
-    con = fdb.connect(
-        host=db_server,
-        port=3053,
-        database=db_path,
-        user=db_user,
-        password=db_password,
-        charset="utf-8",
-        fb_library_name="C:/sklad/x64/fbclient.dll"
-    )
+    if platform.system() == 'Windows':
+        con = fdb.connect(
+            host=db_server,
+            port=3053,
+            database=db_path,
+            user=db_user,
+            password=db_password,
+            charset="utf-8",
+            fb_library_name="C:/sklad/x64/fbclient.dll"
+        )
+    else:
+        return fdb.connect(
+            host=db_server,
+            port=3053,
+            database=db_path,
+            user=db_user,
+            password=db_password,
+            charset="utf-8"
+        )
     return con
 
 def close_connect(con):
