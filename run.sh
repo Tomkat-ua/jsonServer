@@ -11,6 +11,7 @@ docker container rm $container
 docker run -dt \
     -p $eport:8000 \
     --name=$container \
+    --env-file .env \
     -e APP_VERSION=$tag \
     -e TZ=Europe/Kyiv \
     -e DELAY_LOOP=30 \
