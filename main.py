@@ -69,27 +69,39 @@ def index():
     return render_template('index.html', data=data)
 
 
-@app.route('/', methods=['GET'])
-def get_endpoints():
-    sql = ('select  q.num, q.endpoint,q.api_ver,q.description , \'' +str(request.base_url) +
-           ('\'||utils.get_url(q.endpoint) as url '
-            'from querys q'))
-    result = cur_to_json(db.get_data(sql))
-    return result, 200
+# @app.route('/', methods=['GET'])
+# def get_endpoints():
+#     sql = ('select  q.num, q.endpoint,q.api_ver,q.description , \'' +str(request.base_url) +
+#            ('\'||utils.get_url(q.endpoint) as url '
+#             'from querys q'))
+#     result = cur_to_json(db.get_data(sql))
+#     return result, 200
 
 @app.route('/api/1/<endpoint>',defaults={'p': None}, methods=['GET'])
 # @app.route('/api/1/<endpoint>', methods=['GET'])
 def gen_data_1(endpoint,p):
-    p = request.args.get('where')
-    print(p)
+    # p = request.args.get('where')
+    args = request.args
+    sql = db.get_sql(endpoint, None, 1)
+    if 'where' not in sql:
+        sql=sql+' where 1=1'
+    for key in args:
+        if 'key' not in  key:
+            par = args.get(key)
+            # print(f"Параметр: {key}, Значення: {par}")
+            sql = sql + ' and '+  key+ '='+ par
+    print(sql )
     try:
-        if p:
-            sql = db.get_sql(endpoint,p,1)
-        else :
-            sql = db.get_sql(endpoint, None,1)
-        print(sql)
         result = cur_to_json(db.get_data(sql))
-        return result,200
+        return result, 200
+    # try:
+    #     if p:
+    #         sql = db.get_sql(endpoint,p,1)
+    #     else :
+    #         sql = db.get_sql(endpoint, None,1)
+    #     print(sql)
+    #     result = cur_to_json(db.get_data(sql))
+    #     return result,200
     except Exception as e:
         return jsonify({'error': str(e), 'sql': sql}),200
 
@@ -97,6 +109,7 @@ def gen_data_1(endpoint,p):
 @app.route('/api/2/<endpoint>', defaults={'p': None}, methods=['GET'])
 @app.route('/api/2/<endpoint>/<p>', methods=['GET'])
 def gen_data_2(endpoint, p):
+    print(p)
     try:
         if p:
             sql = db.get_sql(endpoint, p,2)
